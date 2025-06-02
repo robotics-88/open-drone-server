@@ -1,0 +1,5 @@
+fastapi
+numpy
+rclpy
+uvicorn
+websockets
