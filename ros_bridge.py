@@ -9,7 +9,7 @@ class DroneBridge(Node):
     def __init__(self):
         super().__init__('drone_bridge')
 
-        self.capabilities = []
+        self.capabilities = ''
         self.heading = 0.0
         self.lat = 0.0
         self.lon = 0.0
@@ -37,8 +37,7 @@ class DroneBridge(Node):
 
 
     def capabilities_cb(self, msg):
-        if msg.data not in self.capabilities:
-            self.capabilities.append(msg.data)
+        self.capabilities = msg.data
 
     def heading_cb(self, msg):
         self.heading = msg.data

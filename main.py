@@ -13,7 +13,7 @@ app.add_middleware(
 
 @app.get("/capabilities")
 def get_capabilities():
-    return {"missions": bridge.capabilities}
+    return {"capabilities": bridge.capabilities}
 
 @app.get("/status")
 def get_status():
