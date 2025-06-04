@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import threading
 from ros_bridge import start_ros, bridge
+import uvicorn
+import json
+from typing import Dict, Any
 
 app = FastAPI()
 
@@ -37,8 +40,13 @@ async def websocket_endpoint(ws: WebSocket):
         })
         await asyncio.sleep(1)
 
+@app.post("/run_mission")
+async def run_mission(mission: Dict[str, Any]):
+    mission_str = json.dumps(mission)
+    bridge.run_mission(mission_str)
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     threading.Thread(target=start_ros, daemon=True).start()
 
-    import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8888, reload=False)
