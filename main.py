@@ -16,10 +16,14 @@ app.add_middleware(
 
 @app.get("/capabilities")
 def get_capabilities():
+    if bridge is None:
+        return {"error": "Bridge not initialized yet"}
     return {"capabilities": bridge.capabilities}
 
 @app.get("/status")
 def get_status():
+    if bridge is None:
+        return {"error": "Bridge not initialized yet"}
     return {
         "lat": bridge.lat,
         "lon": bridge.lon,
@@ -29,6 +33,8 @@ def get_status():
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
+    if bridge is None:
+        return {"error": "Bridge not initialized yet"}
     await ws.accept()
     while True:
         await ws.send_json({
@@ -42,6 +48,8 @@ async def websocket_endpoint(ws: WebSocket):
 
 @app.post("/run_mission")
 async def run_mission(mission: Dict[str, Any]):
+    if bridge is None:
+        return {"error": "Bridge not initialized yet"}
     mission_str = json.dumps(mission)
     bridge.run_mission(mission_str)
     return {"status": "ok"}
