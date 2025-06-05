@@ -14,10 +14,6 @@ app.add_middleware(
     allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
 )
 
-@app.on_event("startup")
-async def on_startup():
-    threading.Thread(target=start_ros, daemon=True).start()
-
 @app.get("/capabilities")
 def get_capabilities():
     if bridge is None:
