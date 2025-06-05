@@ -14,6 +14,10 @@ app.add_middleware(
     allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
 )
 
+@app.on_event("startup")
+async def on_startup():
+    threading.Thread(target=start_ros, daemon=True).start()
+
 @app.get("/capabilities")
 def get_capabilities():
     if bridge is None:
@@ -57,4 +61,4 @@ async def run_mission(mission: Dict[str, Any]):
 if __name__ == "__main__":
     threading.Thread(target=start_ros, daemon=True).start()
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8888, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)
