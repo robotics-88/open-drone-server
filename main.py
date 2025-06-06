@@ -6,6 +6,7 @@ from ros_bridge import start_ros, bridge
 import uvicorn
 import json
 from typing import Dict, Any
+from starlette.websockets import WebSocketDisconnect
 
 app = FastAPI()
 
@@ -34,17 +35,34 @@ def get_status():
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     if bridge is None:
-        return {"error": "Bridge not initialized yet"}
+        try:
+            await ws.accept()
+            await ws.close(code=1011)
+        except Exception:
+            pass
+        return
+
     await ws.accept()
-    while True:
-        await ws.send_json({
-            "lat": bridge.lat,
-            "lon": bridge.lon,
-            "alt": 10,  # placeholder for now
-            "heading": bridge.heading,
-            "status": "in flight"
-        })
-        await asyncio.sleep(1)
+    try:
+        while True:
+            await ws.send_json({
+                "lat": bridge.lat,
+                "lon": bridge.lon,
+                "alt": 10,
+                "heading": bridge.heading,
+                "status": "in flight"
+            })
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        try:
+            await ws.close()
+        except RuntimeError:
+            # Socket already closed — ignore
+            pass
 
 @app.post("/run_mission")
 async def run_mission(mission: Dict[str, Any]):
