@@ -2,7 +2,7 @@
 
 import json
 import threading
-import asyncio
+import time
 from typing import Dict, Any
 
 import rclpy
@@ -22,6 +22,10 @@ import uvicorn
 class DroneBridge(Node):
     def __init__(self):
         super().__init__('drone_bridge')
+
+        self.stale = True
+        self.last_telemetry_time = time.time()
+        self.stale_timeout_sec = 5  # e.g. 5 seconds of silence = stale
 
         # telemetry fields
         self.capabilities: str = ''
@@ -49,6 +53,15 @@ class DroneBridge(Node):
         self.create_subscription(BatteryState, '/mavros/battery', self.battery_cb, qos_profile_sensor_data)
         self.create_subscription(UInt32,   '/mavros/global_position/raw/satellites', self.gps_cb, qos_profile_sensor_data)
         self.create_subscription(Float64, '/mavros/global_position/rel_alt',   self.height_cb, qos_profile_sensor_data)
+
+        self.create_timer(1.0, self.check_stale_telemetry)
+
+    def check_stale_telemetry(self):
+        if time.time() - self.last_telemetry_time > self.stale_timeout_sec:
+            if not self.stale:
+                self.get_logger().warn("Telemetry stale — clearing data")
+                self.stale = True
+
 
     # existing callbacks
     def capabilities_cb(self, msg: String):
@@ -78,7 +91,10 @@ class DroneBridge(Node):
         self.battery_voltage = msg.voltage
 
     def gps_cb(self, msg: UInt32):
+        self.last_telemetry_time = time.time()
         self.gps_satellites = msg.data
+        if self.last_telemetry_time > self.stale_timeout_sec:
+            self.stale = False
 
     def height_cb(self, msg: Float64):
         self.height = msg.data
