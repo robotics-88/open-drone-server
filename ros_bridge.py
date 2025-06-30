@@ -42,11 +42,16 @@ class DroneBridge(Node):
         self.distance: float = 0.0
         self.speed: float = 0.0
 
+        self.log: str = ''
+        self.log_level: str = 'info'  # e.g. 'info', 'warn', 'error'
+        self.log_stamp: int = 0  # matches initial time of local variable in main, so wont send blank first message
+
         # publishers & subscriptions
         self.run_mission_pub = self.create_publisher(String, '/frontend/run_mission', 10)
 
         self.create_subscription(String,   '/task_manager/capabilities', self.capabilities_cb, 10)
         self.create_subscription(String,   '/task_manager/rest_status',    self.status_cb,       10)
+        self.create_subscription(String,   '/task_manager/rest_log',    self.log_cb,       10)
         self.create_subscription(Float64,  '/mavros/global_position/compass_hdg', self.heading_cb, qos_profile_sensor_data)
         self.create_subscription(NavSatFix, '/mavros/global_position/global',      self.global_cb,  qos_profile_sensor_data)
 
@@ -79,6 +84,18 @@ class DroneBridge(Node):
         self.num_cameras = payload.get("num_cameras", 0)
         self.distance    = payload.get("distance", 0.0)
         self.speed       = payload.get("speed", 0.0)
+
+    def log_cb(self, msg: String):
+        try:
+            payload = json.loads(msg.data)
+        except json.JSONDecodeError as e:
+            self.get_logger().error(f"Failed to parse log JSON: {e}")
+            return
+
+        # now payload is a dict, so these will work:
+        self.log = payload.get("message", "")
+        self.log_level = payload.get("level", "info")
+        self.log_stamp = int(time.time() * 1000)
 
     def heading_cb(self, msg: Float64):
         self.heading = msg.data

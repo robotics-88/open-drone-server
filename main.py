@@ -53,6 +53,8 @@ async def websocket_endpoint(ws: WebSocket):
         return
 
     await ws.accept()
+    last_log_time = 0  # local to this connection
+    
     try:
         while True:
             if not bridge.stale:
@@ -71,6 +73,14 @@ async def websocket_endpoint(ws: WebSocket):
                     "distance": getattr(bridge, "distance", None),
                     "speed": getattr(bridge, "speed", None),
                 })
+                if not bridge.log_stamp == last_log_time:
+                    last_log_time = bridge.log_stamp
+                    print(f"last log time: {last_log_time}")
+                    await ws.send_json({
+                        "type": "log",
+                        "message": bridge.log,
+                        "level": bridge.log_level
+                    })
                 await asyncio.sleep(1)
     except WebSocketDisconnect:
         print("WebSocket disconnected")
