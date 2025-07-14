@@ -44,6 +44,19 @@ def get_status():
         "speed": getattr(bridge, "speed", None),
     }
 
+@app.post("/set_module_active")
+async def set_module_active(req: Dict[str, Any]):
+    if bridge is None:
+        return {"error": "Bridge not initialized yet"}
+
+    try:
+        # Convert to JSON string and publish as std_msgs/String
+        msg = json.dumps(req)
+        bridge.publish_toggle_module(msg)
+        return {"status": "ok"}
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
     # Reject if bridge not ready

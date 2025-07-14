@@ -1,9 +1,7 @@
 # main.py
 
 import json
-import threading
 import time
-from typing import Dict, Any
 
 import rclpy
 from rclpy.node import Node
@@ -12,10 +10,7 @@ from rclpy.qos import qos_profile_sensor_data
 from std_msgs.msg import Float64, UInt32, String
 from sensor_msgs.msg import NavSatFix, BatteryState
 
-from fastapi import FastAPI, WebSocket
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.websockets import WebSocketDisconnect
-import uvicorn
+import std_msgs
 
 # --- ROS bridge --------------------------------------------------------------
 
@@ -48,6 +43,7 @@ class DroneBridge(Node):
 
         # publishers & subscriptions
         self.run_mission_pub = self.create_publisher(String, '/frontend/run_mission', 10)
+        self.toggle_module_pub = self.create_publisher(std_msgs.msg.String, '/frontend/toggle_module', 10)
 
         self.create_subscription(String,   '/task_manager/capabilities', self.capabilities_cb, 10)
         self.create_subscription(String,   '/task_manager/rest_status',    self.status_cb,       10)
@@ -121,6 +117,9 @@ class DroneBridge(Node):
         m.data = mission_payload
         self.run_mission_pub.publish(m)
 
+    def publish_toggle_module(self, msg_string: str):
+        msg = std_msgs.msg.String(data=msg_string)
+        self.toggle_module_pub.publish(msg)
 
 bridge: DroneBridge = None
 
