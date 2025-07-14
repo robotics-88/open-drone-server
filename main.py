@@ -67,6 +67,7 @@ async def websocket_endpoint(ws: WebSocket):
 
     await ws.accept()
     last_log_time = 0  # local to this connection
+    last_capabilities_time = 0 
     
     try:
         while True:
@@ -93,6 +94,12 @@ async def websocket_endpoint(ws: WebSocket):
                         "type": "log",
                         "message": bridge.log,
                         "level": bridge.log_level
+                    })
+                if not bridge.last_capabilities_time == last_capabilities_time:
+                    last_capabilities_time = bridge.last_capabilities_time
+                    print(f"last capabilities time: {last_capabilities_time}")
+                    await ws.send_json({
+                        "type": "capability_reload"
                     })
                 await asyncio.sleep(1)
     except WebSocketDisconnect:

@@ -21,9 +21,10 @@ class DroneBridge(Node):
         self.stale = True
         self.last_telemetry_time = time.time()
         self.stale_timeout_sec = 5  # e.g. 5 seconds of silence = stale
+        self.capabilities: str = ''
+        self.last_capabilities_time = time.time()
 
         # telemetry fields
-        self.capabilities: str = ''
         self.status: str = ''
         self.heading: float = 0.0
         self.lat: float = 0.0
@@ -67,6 +68,7 @@ class DroneBridge(Node):
     # existing callbacks
     def capabilities_cb(self, msg: String):
         self.capabilities = msg.data
+        self.last_capabilities_time = time.time()
         
     def status_cb(self, msg: String):
         try:
