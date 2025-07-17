@@ -9,7 +9,7 @@ from typing import Dict, Any
 from starlette.websockets import WebSocketDisconnect
 import uvicorn
 
-import os
+import base64
 from pathlib import Path
 
 from ros_bridge import start_ros, bridge
@@ -151,6 +151,28 @@ async def websocket_endpoint(ws: WebSocket):
 async def run_mission(mission: Dict[str, Any]):
     if bridge is None:
         return {"error": "Bridge not initialized yet"}
+
+    # If base64-encoded DEM file is provided, save it to disk
+    if "dem_uploaded" in mission and "dem_filename" in mission:
+        try:
+            dem_data = base64.b64decode(mission["dem_uploaded"])
+            dem_name = Path(mission["dem_filename"]).name  # sanitize
+            dem_path = Path.home() / "r88_public" / "dems" / dem_name
+
+            with open(dem_path, "wb") as f:
+                f.write(dem_data)
+
+            # Optional: verify georeferencing or log
+            print(f"[INFO] Saved DEM to: {dem_path}")
+
+            # Replace payload key for ROS bridge:
+            mission["dem"] = dem_name
+            mission.pop("dem_uploaded", None)
+            mission.pop("dem_filename", None)
+
+        except Exception as e:
+            return {"error": f"Failed to save DEM: {str(e)}"}
+        
     payload = json.dumps(mission)
     bridge.run_mission(payload)
     return {"status": "ok"}
