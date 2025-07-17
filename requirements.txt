@@ -1,5 +1,6 @@
 fastapi
 numpy
+rasterio
 rclpy
 uvicorn
 websockets

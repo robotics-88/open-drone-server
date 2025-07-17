@@ -1,15 +1,21 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import asyncio
 import threading
-import json
+import json, rasterio
 from typing import Dict, Any
 from starlette.websockets import WebSocketDisconnect
 import uvicorn
 
+import os
+from pathlib import Path
+
 from ros_bridge import start_ros, bridge
 
 app = FastAPI()
+
+DEM_DIR = Path.home() / "r88_public" / "dems"
 
 # Enable CORS for all origins
 app.add_middleware(
@@ -19,6 +25,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/dems")
+def list_dems():
+    if not DEM_DIR.exists():
+        return JSONResponse(content=[], status_code=200)
+
+    results = []
+
+    for tif_file in DEM_DIR.glob("*.tif"):
+        try:
+            with rasterio.open(tif_file) as src:
+                bounds = src.bounds  # left, bottom, right, top
+                result = {
+                    "filename": tif_file.name,
+                    "bounds": {
+                        "min_lat": bounds.bottom,
+                        "min_lon": bounds.left,
+                        "max_lat": bounds.top,
+                        "max_lon": bounds.right,
+                    }
+                }
+                results.append(result)
+        except Exception as e:
+            print(f"Error reading {tif_file.name}: {e}")
+            continue
+
+    return results
 
 @app.get("/capabilities")
 def get_capabilities():
