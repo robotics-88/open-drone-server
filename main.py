@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 import asyncio
 import threading
 import json, rasterio
+from rasterio.warp import transform_bounds
 from typing import Dict, Any
 from starlette.websockets import WebSocketDisconnect
 import uvicorn
@@ -29,21 +30,22 @@ app.add_middleware(
 @app.get("/dems")
 def list_dems():
     if not DEM_DIR.exists():
-        return JSONResponse(content=[], status_code=200)
+        return []
 
     results = []
-
     for tif_file in DEM_DIR.glob("*.tif"):
         try:
             with rasterio.open(tif_file) as src:
-                bounds = src.bounds  # left, bottom, right, top
+                # Reproject bounds from native CRS to EPSG:4326
+                latlon_bounds = transform_bounds(src.crs, "EPSG:4326", *src.bounds)
+
                 result = {
                     "filename": tif_file.name,
                     "bounds": {
-                        "min_lat": bounds.bottom,
-                        "min_lon": bounds.left,
-                        "max_lat": bounds.top,
-                        "max_lon": bounds.right,
+                        "min_lon": latlon_bounds[0],
+                        "min_lat": latlon_bounds[1],
+                        "max_lon": latlon_bounds[2],
+                        "max_lat": latlon_bounds[3],
                     }
                 }
                 results.append(result)
