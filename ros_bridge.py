@@ -45,6 +45,7 @@ class DroneBridge(Node):
         # publishers & subscriptions
         self.run_mission_pub = self.create_publisher(String, '/frontend/run_mission', 10)
         self.toggle_module_pub = self.create_publisher(std_msgs.msg.String, '/frontend/toggle_module', 10)
+        self.emergency_pub = self.create_publisher(std_msgs.msg.String, '/frontend/emergency', 10)
 
         self.create_subscription(String,   '/task_manager/capabilities', self.capabilities_cb, 10)
         self.create_subscription(String,   '/task_manager/rest_status',    self.status_cb,       10)
@@ -122,6 +123,10 @@ class DroneBridge(Node):
     def publish_toggle_module(self, msg_string: str):
         msg = std_msgs.msg.String(data=msg_string)
         self.toggle_module_pub.publish(msg)
+
+    def publish_emergency(self, type:str):
+        msg = std_msgs.msg.String(data=type)
+        self.emergency_pub.publish(msg)
 
 bridge: DroneBridge = None
 

@@ -27,6 +27,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/emergency/stop")
+def e_stop():
+    bridge.publish_emergency("e-stop")
+    return {"status": "E-Stop issued"}
+
+@app.post("/emergency/pause")
+def pause():
+    bridge.publish_emergency("pause")
+    return {"status": "Pause issued"}
+
+@app.post("/emergency/rtl")
+def rtl():
+    bridge.publish_emergency("rtl")
+    return {"status": "RTL issued"}
+
 @app.get("/dems")
 def list_dems():
     if not DEM_DIR.exists():
