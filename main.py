@@ -42,6 +42,19 @@ def rtl():
     bridge.publish_emergency("rtl")
     return {"status": "RTL issued"}
 
+@app.post("/remote_id")
+def remote_id(req: Dict[str, Any]):
+    if bridge is None:
+        return JSONResponse(status_code=503, content={"error": "Bridge not initialized yet"})
+
+    try:
+        # Convert to JSON string and publish as std_msgs/String
+        msg = json.dumps(req)
+        bridge.publish_remote_id(msg)
+        return {"status": "ok"}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.get("/dems")
 def list_dems():
     if not DEM_DIR.exists():

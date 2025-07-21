@@ -46,6 +46,7 @@ class DroneBridge(Node):
         self.run_mission_pub = self.create_publisher(String, '/frontend/run_mission', 10)
         self.toggle_module_pub = self.create_publisher(std_msgs.msg.String, '/frontend/toggle_module', 10)
         self.emergency_pub = self.create_publisher(std_msgs.msg.String, '/frontend/emergency', 10)
+        self.remote_id_pub = self.create_publisher(std_msgs.msg.String, '/frontend/remote_id', 10)
 
         self.create_subscription(String,   '/task_manager/capabilities', self.capabilities_cb, 10)
         self.create_subscription(String,   '/task_manager/rest_status',    self.status_cb,       10)
@@ -65,8 +66,6 @@ class DroneBridge(Node):
                 self.get_logger().warn("Telemetry stale — clearing data")
                 self.stale = True
 
-
-    # existing callbacks
     def capabilities_cb(self, msg: String):
         self.capabilities = msg.data
         self.last_capabilities_time = time.time()
@@ -127,6 +126,10 @@ class DroneBridge(Node):
     def publish_emergency(self, type:str):
         msg = std_msgs.msg.String(data=type)
         self.emergency_pub.publish(msg)
+
+    def publish_remote_id(self, msg_string: str):
+        msg = std_msgs.msg.String(data=msg_string)
+        self.remote_id_pub.publish(msg)
 
 bridge: DroneBridge = None
 
