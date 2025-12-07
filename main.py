@@ -72,7 +72,7 @@ def record_command(req: Dict[str, Any]):
         else:
             # Stop recording
             # We send a "stop" string (or whatever your subscriber expects for stopping)
-            bridge.publish_record("stop")
+            bridge.publish_record("")
             
             return {"success": True, "recording": False}
 
