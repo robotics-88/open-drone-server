@@ -42,6 +42,43 @@ def rtl():
     bridge.publish_emergency("rtl")
     return {"status": "RTL issued"}
 
+@app.post("/record")
+def record_command(req: Dict[str, Any]):
+    """
+    Handles camera recording toggles.
+    Expected payload: {"record": true} or {"record": false}
+    """
+    if bridge is None:
+        return JSONResponse(status_code=503, content={"error": "Bridge not initialized yet"})
+
+    try:
+        should_record = req.get("record", False)
+
+        if should_record:
+            # 1. Trigger the recording (creates dir, publishes path, waits for files)
+            # This method blocks for up to 5s while checking for files
+            cam_prefixes = bridge.trigger_video_recording()
+            is_recording = True
+            print(f"Camera prefixes found: {cam_prefixes}")
+            if cam_prefixes == []:
+                is_recording = False
+            
+            # 2. Return the list of camera prefixes found
+            return {
+                "success": is_recording, 
+                "recording": is_recording, 
+                "message": "Found cameras: " + ", ".join(cam_prefixes) if is_recording else "No cameras detected.",
+            }
+        else:
+            # Stop recording
+            # We send a "stop" string (or whatever your subscriber expects for stopping)
+            bridge.publish_record("stop")
+            
+            return {"success": True, "recording": False}
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.post("/remote_id")
 def remote_id(req: Dict[str, Any]):
     if bridge is None:
