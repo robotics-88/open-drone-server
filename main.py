@@ -57,7 +57,7 @@ def record_command(req: Dict[str, Any]):
         if should_record:
             # 1. Trigger the recording (creates dir, publishes path, waits for files)
             # This method blocks for up to 5s while checking for files
-            cam_prefixes = bridge.trigger_video_recording()
+            cam_prefixes = bridge.trigger_video_recording(True)
             is_recording = True
             print(f"Camera prefixes found: {cam_prefixes}")
             if cam_prefixes == []:
@@ -72,7 +72,7 @@ def record_command(req: Dict[str, Any]):
         else:
             # Stop recording
             # We send a "stop" string (or whatever your subscriber expects for stopping)
-            bridge.publish_record("")
+            bridge.trigger_video_recording(False)
             
             return {"success": True, "recording": False}
 

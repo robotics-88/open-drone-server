@@ -136,42 +136,49 @@ class DroneBridge(Node):
         msg = std_msgs.msg.String(data=msg_string)
         self.remote_id_pub.publish(msg)
 
-    def trigger_video_recording(self) -> list:
+    def trigger_video_recording(self, record: bool) -> list:
         """
         Creates a timestamped directory, triggers recording, 
         and waits up to 5s for .mp4 files to appear.
         """
-        # 1. Create path
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        record_dir = os.path.expanduser(f"~/r88_public/records/video_{timestamp}/")
-        
-        try:
-            os.makedirs(record_dir, exist_ok=True)
-        except OSError as e:
-            self.get_logger().error(f"Could not create video dir: {e}")
-            return []
-
-        # 2. Publish the directory path to trigger the recorder
-        msg = std_msgs.msg.String(data=record_dir)
-        self.recording_pub.publish(msg)
-        self.get_logger().info(f"Triggered recording at: {record_dir}")
-
-        # 3. Poll for .mp4 files (Timeout: 5 seconds)
-        timeout = 5.0
-        start_time = time.time()
-        
-        while time.time() - start_time < timeout:
-            if os.path.exists(record_dir):
-                files = [f for f in os.listdir(record_dir) if f.endswith(".mp4")]
-                if files:
-                    # Return list of prefixes (up to first '_')
-                    # e.g., "cam0_video.mp4" -> "cam0"
-                    return [f.split('_')[0] for f in files]
+        if record:
+            # 1. Create path
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            record_dir = os.path.expanduser(f"~/r88_public/records/video_{timestamp}/")
             
-            time.sleep(0.5)
+            try:
+                os.makedirs(record_dir, exist_ok=True)
+            except OSError as e:
+                self.get_logger().error(f"Could not create video dir: {e}")
+                return []
 
-        self.get_logger().warn("No video files detected within timeout.")
-        return []
+            # 2. Publish the directory path to trigger the recorder
+            msg = std_msgs.msg.String(data=record_dir)
+            self.recording_pub.publish(msg)
+            self.get_logger().info(f"Triggered recording at: {record_dir}")
+
+            # 3. Poll for .mp4 files (Timeout: 5 seconds)
+            timeout = 5.0
+            start_time = time.time()
+            
+            while time.time() - start_time < timeout:
+                if os.path.exists(record_dir):
+                    files = [f for f in os.listdir(record_dir) if f.endswith(".mp4")]
+                    if files:
+                        # Return list of prefixes (up to first '_')
+                        # e.g., "cam0_video.mp4" -> "cam0"
+                        return [f.split('_')[0] for f in files]
+                
+                time.sleep(0.5)
+
+            self.get_logger().warn("No video files detected within timeout.")
+            return []
+        else:
+            # Stop recording by sending an empty string
+            msg = std_msgs.msg.String(data="")
+            self.recording_pub.publish(msg)
+            self.get_logger().info("Stopped recording.")
+            return []
 
 bridge: DroneBridge = None
 
