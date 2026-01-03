@@ -14,5 +14,6 @@ pip install -r requirements.txt
 ## run
 ```
 source .env/bin/activate
+source /opt/ros/<your_ros_distro>/setup.bash
 uvicorn main:app --host 0.0.0.0 --port 8080
 ```
